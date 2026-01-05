@@ -13,7 +13,7 @@
         <form @submit.prevent="onSubmit" class="space-y-4">
           <!-- ADMIN ID -->
           <div>
-            <label class="block text-sm font-medium mb-1">Admin ID</label>
+            <label class="block text-sm font-medium mb-1">Username</label>
             <div class="relative">
               <span
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"
@@ -22,16 +22,16 @@
               </span>
 
               <input
-                v-model="username"
+                v-model="email"
                 type="text"
                 class="w-full pl-9 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="Enter Admin ID"
-                @input="validateAdminId"
+                placeholder="Enter your username"
+                @input="validateEmail"
               />
             </div>
 
-            <p v-if="adminIdError" class="text-red-500 text-sm mt-1">
-              {{ adminIdError }}
+            <p v-if="emailError" class="text-red-500 text-sm mt-1">
+              {{ emailError }}
             </p>
           </div>
 
@@ -91,80 +91,55 @@
 
 <script setup>
 import { ref } from "vue";
-import axios from "axios";
 import { useRouter } from "vue-router";
 import { toast } from "vue3-toastify";
+import { useAuthStore } from "../../stores/auth";
 
 const router = useRouter();
+const auth = useAuthStore();
 
-const username = ref("");
+const email = ref("");
 const password = ref("");
 const showPassword = ref(false);
 
-const adminIdError = ref("");
+const emailError = ref("");
 const passwordError = ref("");
 
-// Admin ID validation (1 letter + 6 digits)
-const validateAdminId = () => {
-  const regex = /^[A-Za-z][0-9]{6}$/;
-
-  if (!username.value) {
-    adminIdError.value = "Admin ID is required";
-  } else if (!regex.test(username.value)) {
-    adminIdError.value = "Admin ID must be 1 letter + 6 digits (e.g., a290832)";
-  } else {
-    adminIdError.value = "";
-  }
+const validateEmail = () => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email.value) emailError.value = "Email is required";
+  else if (!regex.test(email.value))
+    emailError.value = "Enter a valid email address";
+  else emailError.value = "";
 };
 
-// Password validation (same as user login)
+// Password validation
 const validatePassword = () => {
-  const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-
-  if (!password.value) {
-    passwordError.value = "Password is required";
-  } else if (!regex.test(password.value)) {
-    passwordError.value =
-      "Password must be 6+ chars, include letters, numbers & special characters";
-  } else {
-    passwordError.value = "";
-  }
+  if (!password.value) passwordError.value = "Password is required";
+  else passwordError.value = "";
 };
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value;
 };
 
-const loginAdmin = async () => {
-  try {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/admin/login/`,
-      {
-        username: username.value,
-        password: password.value,
-      }
-    );
+// Admin login
+const onSubmit = async () => {
+  validateEmail();
+  validatePassword();
+  if (emailError.value || passwordError.value) return;
 
-    if (response.data.success) {
-      toast.success("Admin login successful");
-      router.push("/admin/dashboard");
-    } else {
-      toast.error("Invalid username or password");
-    }
-  } catch (error) {
-    toast.error("Login failed. Try again.");
+  const { success, role } = await auth.login(email.value, password.value);
+
+  if (success && role === "admin") {
+    toast.success("Admin login successful");
+    router.push("/admin/dashboard");
+  } else if (success) {
+    toast.error("Access denied: not an admin");
+  } else {
+    toast.error("Invalid email or password");
   }
 };
 
-const onSubmit = () => {
-  validateAdminId();
-  validatePassword();
-
-  if (adminIdError.value || passwordError.value) return;
-
-  loginAdmin();
-};
-const goToUserLogin = () => {
-  router.push("/");
-};
+const goToUserLogin = () => router.push("/");
 </script>

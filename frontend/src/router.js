@@ -42,7 +42,7 @@ const routes = [
     path: "/checkout",
     name: "Checkout",
     component: () => import("../src/components/Checkout.vue"),
-    meta: { requiresAuth: true }, // protect this route
+    meta: { requiresAuth: true },
   },
   {
     path: "/admin/login",
@@ -72,16 +72,20 @@ const router = createRouter({
   routes,
 });
 
-// Global auth guard
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore();
+  const user = auth.user;
 
-  if (to.meta.requiresUser && !auth.isUserAuthenticated) {
-    return next("/login");
+  if (to.meta.requiresUser) {
+    if (!user || user.role !== "user") {
+      return next("/");
+    }
   }
 
-  if (to.meta.requiresAdmin && !auth.isAdminAuthenticated) {
-    return next("/admin-login");
+  if (to.meta.requiresAdmin) {
+    if (!user || user.role !== "admin") {
+      return next("/admin/login");
+    }
   }
 
   next();

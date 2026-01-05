@@ -42,22 +42,22 @@
       <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div class="bg-white shadow rounded-lg p-4 text-center">
           <h3 class="text-sm text-gray-500">Total Perfumes</h3>
-          <p class="text-xl font-bold text-[#3B0A45]">128</p>
+          <p class="text-xl font-bold text-[#3B0A45]">50</p>
         </div>
 
         <div class="bg-white shadow rounded-lg p-4 text-center">
           <h3 class="text-sm text-gray-500">Categories</h3>
-          <p class="text-xl font-bold text-[#3B0A45]">12</p>
+          <p class="text-xl font-bold text-[#3B0A45]">5</p>
         </div>
 
         <div class="bg-white shadow rounded-lg p-4 text-center">
           <h3 class="text-sm text-gray-500">Orders</h3>
-          <p class="text-xl font-bold text-[#3B0A45]">54</p>
+          <p class="text-xl font-bold text-[#3B0A45]">34</p>
         </div>
 
         <div class="bg-white shadow rounded-lg p-4 text-center">
           <h3 class="text-sm text-gray-500">Users</h3>
-          <p class="text-xl font-bold text-[#3B0A45]">342</p>
+          <p class="text-xl font-bold text-[#3B0A45]">100</p>
         </div>
       </section>
 
@@ -94,7 +94,9 @@
 <script setup>
 import { useRouter } from "vue-router";
 const router = useRouter();
+import { useAuthStore } from "../../stores/auth";
 
+const auth = useAuthStore();
 const goTo = (page) => {
   if (page === "dashboard") router.push("/admin/dashboard");
   if (page === "add") router.push("/admin/add-perfume");
@@ -102,6 +104,7 @@ const goTo = (page) => {
 };
 
 const logout = () => {
+  auth.logout();
   router.push("/admin/login");
 };
 </script>

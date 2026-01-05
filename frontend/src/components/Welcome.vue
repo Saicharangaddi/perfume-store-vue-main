@@ -2,7 +2,8 @@
   <div class="flex min-h-screen">
     <!-- LEFT SIDE IMAGE -->
     <div class="hidden md:flex w-1/2 items-center justify-center bg-gray-100">
-      <img src="" alt="Perfume Banner" class="max-w-[70%] rounded-lg shadow" />
+      <img src="../assets/product 6.png" alt="Perfume Banner" class="w-[95%]
+      h-[100%] object-contain rounded-lg shadow" " />
     </div>
 
     <!-- RIGHT SIDE LOGIN FORM -->
@@ -21,17 +22,17 @@
                 👤
               </span>
               <input
-                v-model="username"
+                v-model="email"
                 type="text"
                 class="w-full pl-9 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="Enter your username"
-                @input="validateUsername"
+                @input="validateEmail"
               />
             </div>
 
             <!-- Inline error -->
-            <p v-if="usernameError" class="text-red-500 text-sm mt-1">
-              {{ usernameError }}
+            <p v-if="emailError" class="text-red-500 text-sm mt-1">
+              {{ emailError }}
             </p>
           </div>
 
@@ -95,81 +96,56 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import axios from "axios";
 import { toast } from "vue3-toastify";
+import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
+const auth = useAuthStore();
 
-const username = ref("");
+const email = ref("");
 const password = ref("");
 const showPassword = ref(false);
 
-const usernameError = ref("");
+const emailError = ref("");
 const passwordError = ref("");
 
-// Username validation (real-world)
-const validateUsername = () => {
-  const regex = /^[A-Za-z][A-Za-z0-9_]{2,15}$/;
-
-  if (!username.value) {
-    usernameError.value = "Username is required";
-  } else if (!regex.test(username.value)) {
-    usernameError.value =
-      "Username must be 3–16 characters, start with a letter, and contain only letters, numbers, or underscores";
-  } else {
-    usernameError.value = "";
-  }
+const validateEmail = () => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email.value) emailError.value = "Email is required";
+  else if (!regex.test(email.value))
+    emailError.value = "Enter a valid email address";
+  else emailError.value = "";
 };
 
-// Password validation
 const validatePassword = () => {
   const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-
-  if (!password.value) {
-    passwordError.value = "Password is required";
-  } else if (!regex.test(password.value)) {
+  if (!password.value) passwordError.value = "Password is required";
+  else if (!regex.test(password.value))
     passwordError.value =
       "Password must be 6+ chars, include letters, numbers & special characters";
-  } else {
-    passwordError.value = "";
-  }
+  else passwordError.value = "";
 };
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value;
 };
 
-const loginUser = async () => {
-  try {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/accounts/login/`,
-      {
-        username: username.value,
-        password: password.value,
-      }
-    );
+const onSubmit = async () => {
+  validateEmail();
+  validatePassword();
+  if (emailError.value || passwordError.value) return;
 
-    if (response.data.success) {
-      toast.success("Login successful");
-      router.push("/home");
-    } else {
-      toast.error("Invalid username or password");
-    }
-  } catch (error) {
-    toast.error("Something went wrong. Please try again.");
+  const result = await auth.login(email.value, password.value);
+
+  if (result.success) {
+    toast.success("Login successful");
+
+    if (result.role === "user") router.push("/home");
+    else if (result.role === "admin") router.push("/admin/dashboard");
+  } else {
+    toast.error("Invalid email or password");
   }
 };
 
-const onSubmit = () => {
-  validateUsername();
-  validatePassword();
-
-  if (usernameError.value || passwordError.value) return;
-
-  loginUser();
-};
-
-const goToAdminLogin = () => {
-  router.push("/admin/login");
-};
+const goToAdminLogin = () => router.push("/admin/login");
 </script>

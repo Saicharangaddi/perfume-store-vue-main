@@ -6,79 +6,51 @@ import { useCartStore } from "./useCartStores";
 export const useAuthStore = defineStore(
   "auth",
   () => {
-    // State
-    const user = ref(null); // normal user
-    const admin = ref(null); // admin user
+    const user = ref(null);
     const cart = useCartStore();
-    // Getters
-    const isUserAuthenticated = computed(() => !!user.value);
-    const isAdminAuthenticated = computed(() => !!admin.value);
 
-    // USER LOGIN
-    async function loginUser(username, password) {
+    const isAuthenticated = computed(() => !!user.value);
+    const isUser = computed(() => user.value?.role === "user");
+    const isAdmin = computed(() => user.value?.role === "admin");
+
+    async function login(email, password) {
       try {
         const response = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/accounts/login/`,
-          {
-            username,
-            password,
-          }
+          `${import.meta.env.VITE_API_URL}/auth/login`,
+          { email, password }
         );
 
-        if (response.data.success) {
-          user.value = response.data.username;
-          return { success: true };
-        }
+        const userData = response.data.user;
+        const token = response.data.token;
 
+        if (userData && token) {
+          user.value = userData;
+          localStorage.setItem("token", token);
+          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          return { success: true, role: userData.role };
+        }
         return { success: false };
       } catch (error) {
-        console.error("User login failed:", error);
-        return { success: false };
-      }
-    }
-
-    // ADMIN LOGIN
-    async function loginAdmin(username, password) {
-      try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/accounts/admin/login/`,
-          {
-            username,
-            password,
-          }
-        );
-
-        if (response.data.success) {
-          admin.value = username;
-          return { success: true };
-        }
-
-        return { success: false };
-      } catch (error) {
-        console.error("Admin login failed:", error);
+        console.error("Login failed:", error);
         return { success: false };
       }
     }
 
     // LOGOUT
-    function logoutUser() {
+    function logout() {
       user.value = null;
+      localStorage.removeItem("token");
       cart.clearCart();
-    }
-
-    function logoutAdmin() {
-      admin.value = null;
+      delete axios.defaults.headers.common["Authorization"];
     }
 
     return {
       user,
-      admin,
-      isUserAuthenticated,
-      isAdminAuthenticated,
-      loginUser,
-      loginAdmin,
-      logoutUser,
-      logoutAdmin,
+      isAuthenticated,
+      isUser,
+      isAdmin,
+      login,
+      logout,
     };
   },
   {
