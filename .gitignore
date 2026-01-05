@@ -16,7 +16,6 @@ frontend/dist/
 backend/.env
 frontend/.env
 
-
 # Logs
 logs
 *.log
